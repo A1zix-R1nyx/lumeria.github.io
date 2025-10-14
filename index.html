@@ -70,7 +70,6 @@
     
     <div class="relative min-h-screen flex items-center justify-center p-4 z-10">
         
-        <!-- Info Button -->
         <div id="info-button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 cursor-pointer z-20" title="เกี่ยวกับ Lumeria">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
         </div>
@@ -119,7 +118,6 @@
         </section>
     </div>
 
-    <!-- Info Modal -->
     <div id="info-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 transition-opacity duration-300">
         <div class="glass-card rounded-2xl p-8 max-w-md w-full relative">
             <button id="close-modal-button" class="absolute top-4 right-4 text-slate-500 hover:text-slate-800">
@@ -128,12 +126,11 @@
             <h2 class="text-2xl font-bold mb-4 text-slate-800">Lumeria คืออะไร?</h2>
             <p class="text-slate-600">ลูมิเลีย (Lumeria) คือพื้นที่ส่วนตัวสำหรับสำรวจและบันทึกห้วงความคิดของท่าน</p>
             <ul class="list-disc list-inside mt-4 space-y-2 text-slate-600">
-                <li>เลือกแสงสีที่สะท้อนอารมณ์ของท่านในตอนนี้</li>
-                <li>เขียนบันทึกห้วงความคิดและความรู้สึกของท่านลงในผลึก</li>
-                <li>รับเสียงสะท้อนที่อ่อนโยนจากลูมิเลีย เพื่อปลอบประโลมใจ</li>
+                <li>เลือก 'แสงสี' ที่สะท้อนอารมณ์ของท่านในตอนนี้</li>
+                <li>เขียนบันทึกห้วงความคิดและความรู้สึกของท่านลงใน 'ผลึก'</li>
+                <li>รับ 'เสียงสะท้อน' ที่อ่อนโยนจากลูมิเลีย เพื่อปลอบประโลมใจ</li>
             </ul>
-            <p class="mt-4 text-sm text-slate-500">ข้อมูลทั้งหมดของท่านจะถูกบันทึกไว้ในเบราว์เซอร์นี้เท่านั้น 
-                และจะไม่ถูกนำไปเผยแพร่ที่ไหนเพื่อความเป็นส่วนตัวสูงสุดของท่าน</p>
+            <p class="mt-4 text-sm text-slate-500">ข้อมูลทั้งหมดของท่านจะถูกบันทึกไว้ในเบราว์เซอร์นี้เท่านั้น และจะไม่ถูกนำไปเผยแพร่ที่ไหนเพื่อความเป็นส่วนตัวสูงสุดของท่าน</p>
         </div>
     </div>
 
@@ -183,7 +180,6 @@
                 }
             };
 
-            // --- Modal Logic ---
             infoButton.addEventListener('click', () => {
                 infoModal.classList.remove('hidden');
                 infoModal.classList.add('fade-enter', 'fade-enter-active');
@@ -194,12 +190,11 @@
             };
             closeModalButton.addEventListener('click', closeModal);
             infoModal.addEventListener('click', (e) => {
-                if (e.target === infoModal) { // Close only if clicking on the background overlay
+                if (e.target === infoModal) { 
                     closeModal();
                 }
             });
 
-            // --- Audio Setup ---
             async function setupAudio() {
                 if (typeof Tone === 'undefined') {
                     console.error("Tone.js is not loaded.");
@@ -246,7 +241,6 @@
                 }
             }
 
-            // --- Main App Logic ---
             moodButtons.forEach(button => {
                 button.addEventListener('click', async () => { 
                     
@@ -342,7 +336,6 @@
                 particleContainer.innerHTML = '';
             }
 
-            // --- Data Persistence & Rendering ---
             function getMemories() {
                 return JSON.parse(localStorage.getItem('lumeria_memories_pastel')) || [];
             }
@@ -373,7 +366,7 @@
                 reflectionContainer.innerHTML = `<p class="text-indigo-400 animate-pulse">กำลังรับฟังเสียงสะท้อนจาก Lumeria...</p>`;
                 reflectionContainer.classList.remove('hidden');
                 
-                const apiKey = ""; 
+                const apiKey = "AIzaSyB7S5gD6eDOElQv7LdfOp6D8wNOIYSx8uA"; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
                 
                 const systemPrompt = "คุณคือ 'ผู้รับฟังแห่ง Lumeria' ผู้มีจิตใจอ่อนโยนและเข้าใจผู้อื่นอย่างลึกซึ้ง ภารกิจของคุณคือการอ่านข้อความที่ได้รับอย่างตั้งใจ **จับใจความสำคัญและความรู้สึกที่ซ่อนอยู่** แล้วตอบกลับด้วยถ้อยคำที่แสดงถึง **ความเข้าใจ** และ **ความเห็นอกเห็นใจ** เสมือนเพื่อนที่คอยรับฟังอยู่ข้างๆ จงมอบพลังบวกและความหวังที่อ่อนโยนกลับไปให้พวกเขา ตอบเป็นภาษาไทยที่นุ่มนวล ไม่เกิน 2-3 ประโยค และต้องอ้างอิงถึงสิ่งที่เขาเขียนเสมอ";
@@ -386,7 +379,7 @@
                     generationConfig: {
                         temperature: 0.7,
                         topP: 0.95,
-                        maxOutputTokens: 1024,
+                        maxOutputTokens: 8192,
                     }
                 };
 
@@ -490,4 +483,3 @@
     </script>
 </body>
 </html>
-
