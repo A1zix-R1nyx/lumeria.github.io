@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumeria: สถานที่พักใจส่วนตัวของคุณ</title>
+    <title>Lumeria: สถานที่พักใจส่วนตัวของท่าน</title>
     <link rel="icon" href="https://img2.pic.in.th/pic/image2047b968080d33f2.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,6 +19,7 @@
         .theme-happy { background: linear-gradient(-45deg, #fff1e6, #fde2e4, #fad2e1, #e2eAFC); background-size: 400% 400%; animation: gradient-animation 15s ease infinite; }
         .theme-sad { background: linear-gradient(-45deg, #d6e2e9, #cddafd, #a2d2ff, #BDE0FE); background-size: 400% 400%; animation: gradient-animation 20s ease infinite; }
         .theme-empty { background: linear-gradient(-45deg, #e5e5e5, #f5f3f4, #d3d3d3, #e0e1dd); background-size: 400% 400%; animation: gradient-animation 25s ease infinite; }
+        .theme-complex { background: linear-gradient(-45deg, #483d8b, #6a5acd, #9370db, #8a2be2); background-size: 400% 400%; animation: gradient-animation 18s ease infinite; }
         
         @keyframes gradient-animation {
             0% { background-position: 0% 50%; }
@@ -56,6 +57,7 @@
         .particle-happy { background-color: rgba(255, 204, 204, 0.8); width: 10px; height: 10px; }
         .particle-sad { background-color: rgba(162, 210, 255, 0.8); width: 15px; height: 15px; animation-duration: 30s; }
         .particle-empty { background-color: rgba(200, 200, 200, 0.6); width: 8px; height: 8px; animation-duration: 40s; }
+        .particle-complex { background-color: rgba(204, 188, 255, 0.7); width: 12px; height: 12px; animation-duration: 25s; }
         .fade-enter { opacity: 0; transform: translateY(20px); }
         .fade-enter-active { opacity: 1; transform: translateY(0); transition: opacity 0.8s, transform 0.8s; }
         .fade-exit { opacity: 1; transform: translateY(0); }
@@ -65,11 +67,18 @@
 </head>
 <body class="theme-base text-slate-700 antialiased">
     <div id="particle-container" class="absolute top-0 left-0 w-full h-full overflow-hidden z-0"></div>
+    
     <div class="relative min-h-screen flex items-center justify-center p-4 z-10">
+        
+        <!-- Info Button -->
+        <div id="info-button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 cursor-pointer z-20" title="เกี่ยวกับ Lumeria">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+        </div>
+
         <section id="selection-screen" class="text-center transition-all duration-1000">
             <h1 class="text-3xl md:text-5xl font-bold mb-4 text-slate-800">ยินดีต้อนรับสู่ผลึกห้วงความคิดลูมิเลีย</h1>
-            <p class="text-lg md:text-2xl text-slate-500 mb-12">วันนี้... แสงสีใดที่สะท้อนความรู้สึกของคุณ?</p>
-            <div class="flex flex-col md:flex-row gap-8 justify-center">
+            <p class="text-lg md:text-2xl text-slate-500 mb-12">วันนี้... แสงสีใดที่สะท้อนความรู้สึกของท่าน?</p>
+            <div class="flex flex-wrap gap-8 justify-center">
                 <button data-mood="happy" class="mood-button flex flex-col items-center p-6 rounded-2xl glass-card hover:bg-white/80">
                     <div class="w-24 h-24 rounded-full bg-amber-100 flex items-center justify-center text-4xl mb-4">☀️</div>
                     <span class="text-xl font-semibold text-amber-800">ความสุข</span>
@@ -82,9 +91,14 @@
                     <div class="w-24 h-24 rounded-full bg-slate-200 flex items-center justify-center text-4xl mb-4">☁️</div>
                     <span class="text-xl font-semibold text-slate-800">ความว่างเปล่า</span>
                 </button>
+                <button data-mood="complex" class="mood-button flex flex-col items-center p-6 rounded-2xl glass-card hover:bg-white/80">
+                    <div class="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center text-4xl mb-4">🌌</div>
+                    <span class="text-xl font-semibold text-indigo-800">ความรู้สึกซับซ้อน</span>
+                </button>
             </div>
             <p id="audio-prompt" class="mt-8 text-slate-400 text-sm">คลิกเพื่อเริ่มต้นห้วงผลึกความคิด</p>
         </section>
+
         <section id="sanctuary-screen" class="hidden w-full max-w-4xl mx-auto transition-all duration-1000">
             <div class="glass-card rounded-2xl p-6 md:p-8">
                 <div class="text-center mb-8">
@@ -94,7 +108,7 @@
                 <div id="journal-section">
                     <h3 class="text-xl font-semibold mb-4 text-center text-slate-700">บันทึกความทรงจำลงในผลึก</h3>
                     <form id="memory-form">
-                        <textarea id="memory-input" class="w-full h-24 p-4 rounded-lg bg-white/40 border border-white/50 focus:ring-2 focus:ring-slate-400 focus:outline-none placeholder-slate-400 text-slate-700" placeholder="พิมพ์ความรู้สึกของคุณที่นี่..."></textarea>
+                        <textarea id="memory-input" class="w-full h-24 p-4 rounded-lg bg-white/40 border border-white/50 focus:ring-2 focus:ring-slate-400 focus:outline-none placeholder-slate-400 text-slate-700" placeholder="พิมพ์ความรู้สึกของท่านที่นี่..."></textarea>
                         <button type="submit" class="w-full mt-4 py-3 rounded-lg bg-white/50 hover:bg-white/80 font-semibold text-slate-700 transition">เก็บรักษาความทรงจำ</button>
                     </form>
                 </div>
@@ -104,6 +118,25 @@
             <button id="back-button" class="block mx-auto mt-8 text-slate-500 hover:text-slate-800 transition">กลับไปเลือกแสงสี</button>
         </section>
     </div>
+
+    <!-- Info Modal -->
+    <div id="info-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 transition-opacity duration-300">
+        <div class="glass-card rounded-2xl p-8 max-w-md w-full relative">
+            <button id="close-modal-button" class="absolute top-4 right-4 text-slate-500 hover:text-slate-800">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <h2 class="text-2xl font-bold mb-4 text-slate-800">Lumeria คืออะไร?</h2>
+            <p class="text-slate-600">ลูมิเลีย (Lumeria) คือพื้นที่ส่วนตัวสำหรับสำรวจและบันทึกห้วงความคิดของท่าน</p>
+            <ul class="list-disc list-inside mt-4 space-y-2 text-slate-600">
+                <li>เลือกแสงสีที่สะท้อนอารมณ์ของท่านในตอนนี้</li>
+                <li>เขียนบันทึกห้วงความคิดและความรู้สึกของท่านลงในผลึก</li>
+                <li>รับเสียงสะท้อนที่อ่อนโยนจากลูมิเลีย เพื่อปลอบประโลมใจ</li>
+            </ul>
+            <p class="mt-4 text-sm text-slate-500">ข้อมูลทั้งหมดของท่านจะถูกบันทึกไว้ในเบราว์เซอร์นี้เท่านั้น 
+                และจะไม่ถูกนำไปเผยแพร่ที่ไหนเพื่อความเป็นส่วนตัวสูงสุดของท่าน</p>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const body = document.body;
@@ -118,6 +151,9 @@
             const memoryContainer = document.getElementById('memory-crystal-container');
             const backButton = document.getElementById('back-button');
             const audioPrompt = document.getElementById('audio-prompt');
+            const infoButton = document.getElementById('info-button');
+            const infoModal = document.getElementById('info-modal');
+            const closeModalButton = document.getElementById('close-modal-button');
 
             let ambientSound; 
             let isAudioReady = false;
@@ -128,20 +164,42 @@
                 happy: {
                     theme: 'theme-happy',
                     title: 'พื้นที่แห่งความสุข',
-                    subtitle: 'ให้แสงสีทองโอบล้อมคุณไว้ พลังงานแห่งความสุขกำลังเบ่งบาน',
+                    subtitle: 'ให้แสงแห่งสีสันโอบล้อมท่านไว้ พลังงานแห่งความสุขกำลังเบ่งบาน',
                 },
                 sad: {
                     theme: 'theme-sad',
                     title: 'โอเอซิสแห่งความสงบ',
-                    subtitle: 'ไม่เป็นไรเลยที่จะรู้สึก... ให้สายลมแห่งความเข้าใจปลอบโยนคุณ',
+                    subtitle: 'ไม่เป็นไรเลยที่จะรู้สึก... ให้สายลมทะเลแห่งความเข้าใจปลอบโยนท่าน',
                 },
                 empty: {
                     theme: 'theme-empty',
                     title: 'ห้วงแห่งความว่างเปล่า',
-                    subtitle: 'ในความเงียบสงบนี้ คุณจะได้ค้นพบแสงสว่างที่ซ่อนอยู่ภายใน',
+                    subtitle: 'ในความเงียบสงบนี้ ท่านจะได้ค้นพบแสงสว่างที่ซ่อนอยู่ภายใน',
+                },
+                complex: {
+                    theme: 'theme-complex',
+                    title: 'ห้วงความรู้สึกที่ซับซ้อน',
+                    subtitle: 'บางครั้งความรู้สึกก็เกินกว่าจะบรรยาย... ที่นี่คือพื้นที่สำหรับความรู้สึกนั้น',
                 }
             };
 
+            // --- Modal Logic ---
+            infoButton.addEventListener('click', () => {
+                infoModal.classList.remove('hidden');
+                infoModal.classList.add('fade-enter', 'fade-enter-active');
+            });
+            const closeModal = () => {
+                infoModal.classList.remove('fade-enter', 'fade-enter-active');
+                infoModal.classList.add('hidden');
+            };
+            closeModalButton.addEventListener('click', closeModal);
+            infoModal.addEventListener('click', (e) => {
+                if (e.target === infoModal) { // Close only if clicking on the background overlay
+                    closeModal();
+                }
+            });
+
+            // --- Audio Setup ---
             async function setupAudio() {
                 if (typeof Tone === 'undefined') {
                     console.error("Tone.js is not loaded.");
@@ -188,6 +246,7 @@
                 }
             }
 
+            // --- Main App Logic ---
             moodButtons.forEach(button => {
                 button.addEventListener('click', async () => { 
                     
@@ -283,6 +342,7 @@
                 particleContainer.innerHTML = '';
             }
 
+            // --- Data Persistence & Rendering ---
             function getMemories() {
                 return JSON.parse(localStorage.getItem('lumeria_memories_pastel')) || [];
             }
@@ -317,19 +377,26 @@
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
                 
                 const systemPrompt = "คุณคือ 'ผู้รับฟังแห่ง Lumeria' ผู้มีจิตใจอ่อนโยนและเข้าใจผู้อื่นอย่างลึกซึ้ง ภารกิจของคุณคือการอ่านข้อความที่ได้รับอย่างตั้งใจ **จับใจความสำคัญและความรู้สึกที่ซ่อนอยู่** แล้วตอบกลับด้วยถ้อยคำที่แสดงถึง **ความเข้าใจ** และ **ความเห็นอกเห็นใจ** เสมือนเพื่อนที่คอยรับฟังอยู่ข้างๆ จงมอบพลังบวกและความหวังที่อ่อนโยนกลับไปให้พวกเขา ตอบเป็นภาษาไทยที่นุ่มนวล ไม่เกิน 2-3 ประโยค และต้องอ้างอิงถึงสิ่งที่เขาเขียนเสมอ";
-                const moodThai = { happy: 'มีความสุข', sad: 'เศร้า', empty: 'ว่างเปล่า' }[mood];
+                const moodThai = { happy: 'มีความสุข', sad: 'เศร้า', empty: 'ว่างเปล่า', complex: 'รู้สึกซับซ้อนอธิบายไม่ถูก' }[mood];
                 const userQuery = `ตอนนี้ฉันรู้สึก '${moodThai}' และนี่คือความคิดของฉัน: "${text}" ช่วยมอบข้อคิดให้ฉันหน่อย`;
                 
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: {
+                        temperature: 0.7,
+                        topP: 0.95,
+                        maxOutputTokens: 1024,
+                    }
+                };
+
                 const MAX_RETRIES = 3;
                 for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
                     try {
                         const response = await fetch(apiUrl, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                systemInstruction: { parts: [{ text: systemPrompt }] },
-                                contents: [{ parts: [{ text: userQuery }] }]
-                            })
+                            body: JSON.stringify(payload)
                         });
 
                         if (!response.ok) {
@@ -342,7 +409,13 @@
                         }
 
                         const result = await response.json();
-                        const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                        
+                        if (!result || !result.candidates || result.candidates.length === 0) {
+                            console.error("Invalid or empty response from API:", JSON.stringify(result, null, 2));
+                            throw new Error("Invalid or empty response from API.");
+                        }
+
+                        const generatedText = result.candidates[0]?.content?.parts?.[0]?.text;
 
                         if (generatedText) {
                             reflectionContainer.innerHTML = `
@@ -351,15 +424,14 @@
                             `;
                             return; 
                         } else {
-                            throw new Error("No content generated.");
+                            console.error("No text content in API response. Full response:", JSON.stringify(result, null, 2));
+                            throw new Error("No text content in API response.");
                         }
                     } catch (error) {
                         console.error(`Attempt ${attempt + 1}: Error generating reflection:`, error);
                         if (attempt === MAX_RETRIES - 1) {
-                            
                             reflectionContainer.innerHTML = `<p class="text-red-500">เกิดข้อผิดพลาดในการเชื่อมต่อกับ Lumeria</p>`;
                         } else {
-                        
                             const delay = Math.pow(2, attempt) * 1000;
                             await new Promise(resolve => setTimeout(resolve, delay));
                         }
@@ -378,10 +450,11 @@
                 if (memories.length > 0) {
                    const memoriesTitle = document.createElement('h3');
                     memoriesTitle.className = "text-xl font-semibold mb-4 text-center text-slate-700";
-                    memoriesTitle.textContent = filterMood ? `ผลึกความทรงจำแห่ง${moodData[filterMood].title.split('พื้นที่แห่ง')[1] || filterMood}` : "ผลึกความทรงจำทั้งหมดของคุณ";
+                    const moodName = { happy: 'ความสุข', sad: 'ความสงบ', empty: 'ความว่างเปล่า', complex: 'ความรู้สึกซับซ้อน'}[filterMood];
+                    memoriesTitle.textContent = filterMood ? `ผลึกความทรงจำแห่ง${moodName}` : "ผลึกความทรงจำทั้งหมดของท่าน";
                     memoryContainer.appendChild(memoriesTitle);
                 } else if (filterMood) {
-                    memoryContainer.innerHTML = `<p class="text-center text-slate-500 italic mt-4">ยังไม่มีผลึกความทรงจำในห้วงนี้ ลองบันทึกห้วงความคิดของคุณสิ</p>`;
+                    memoryContainer.innerHTML = `<p class="text-center text-slate-500 italic mt-4">ยังไม่มีผลึกความทรงจำในห้วงนี้ ลองบันทึกห้วงความคิดของท่านสิ</p>`;
                     return;
                 }
 
@@ -389,7 +462,8 @@
                     const moodColorClass = {
                         happy: 'border-amber-400',
                         sad: 'border-sky-400',
-                        empty: 'border-slate-400'
+                        empty: 'border-slate-400',
+                        complex: 'border-indigo-400'
                     }[mem.mood];
 
                     const memoryEl = document.createElement('div');
@@ -416,3 +490,4 @@
     </script>
 </body>
 </html>
+
