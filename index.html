@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumeria: สถานที่พักใจส่วนตัวของคุณ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&family=Noto+Sans+Thai:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans Thai', 'Inter', sans-serif;
+            transition: background 1.5s ease-in-out;
+        }
+        .theme-base { background-color: #f5f3f4; }
+        .theme-happy { background: linear-gradient(-45deg, #fff1e6, #fde2e4, #fad2e1, #e2eAFC); background-size: 400% 400%; animation: gradient-animation 15s ease infinite; }
+        .theme-sad { background: linear-gradient(-45deg, #d6e2e9, #cddafd, #a2d2ff, #BDE0FE); background-size: 400% 400%; animation: gradient-animation 20s ease infinite; }
+        .theme-empty { background: linear-gradient(-45deg, #e5e5e5, #f5f3f4, #d3d3d3, #e0e1dd); background-size: 400% 400%; animation: gradient-animation 25s ease infinite; }
+        
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            transition: all 0.3s ease;
+        }
+        .mood-button {
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+        .mood-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+        }
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); opacity: 0; }
+            25% { opacity: 1; }
+            50% { transform: translateY(-30px) rotate(180deg); }
+            75% { opacity: 1; }
+            100% { transform: translateY(0px) rotate(360deg); opacity: 0; }
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+        }
+        .particle-happy { background-color: rgba(255, 204, 204, 0.8); width: 10px; height: 10px; }
+        .particle-sad { background-color: rgba(162, 210, 255, 0.8); width: 15px; height: 15px; animation-duration: 30s; }
+        .particle-empty { background-color: rgba(200, 200, 200, 0.6); width: 8px; height: 8px; animation-duration: 40s; }
+        .fade-enter { opacity: 0; transform: translateY(20px); }
+        .fade-enter-active { opacity: 1; transform: translateY(0); transition: opacity 0.8s, transform 0.8s; }
+        .fade-exit { opacity: 1; transform: translateY(0); }
+        .fade-exit-active { opacity: 0; transform: translateY(-20px); transition: opacity 0.8s, transform 0.8s; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="theme-base text-slate-700 antialiased">
+    <div id="particle-container" class="absolute top-0 left-0 w-full h-full overflow-hidden z-0"></div>
+    <div class="relative min-h-screen flex items-center justify-center p-4 z-10">
+        <section id="selection-screen" class="text-center transition-all duration-1000">
+            <h1 class="text-3xl md:text-5xl font-bold mb-4 text-slate-800">ยินดีต้อนรับสู่ผลึกห้วงความคิดลูมีเลีย</h1>
+            <p class="text-lg md:text-2xl text-slate-500 mb-12">วันนี้... แสงสีใดที่สะท้อนความรู้สึกของคุณ?</p>
+            <div class="flex flex-col md:flex-row gap-8 justify-center">
+                <button data-mood="happy" class="mood-button flex flex-col items-center p-6 rounded-2xl glass-card hover:bg-white/80">
+                    <div class="w-24 h-24 rounded-full bg-amber-100 flex items-center justify-center text-4xl mb-4">☀️</div>
+                    <span class="text-xl font-semibold text-amber-800">ความสุข</span>
+                </button>
+                <button data-mood="sad" class="mood-button flex flex-col items-center p-6 rounded-2xl glass-card hover:bg-white/80">
+                    <div class="w-24 h-24 rounded-full bg-sky-100 flex items-center justify-center text-4xl mb-4">💧</div>
+                    <span class="text-xl font-semibold text-sky-800">ความเศร้า</span>
+                </button>
+                <button data-mood="empty" class="mood-button flex flex-col items-center p-6 rounded-2xl glass-card hover:bg-white/80">
+                    <div class="w-24 h-24 rounded-full bg-slate-200 flex items-center justify-center text-4xl mb-4">☁️</div>
+                    <span class="text-xl font-semibold text-slate-800">ความว่างเปล่า</span>
+                </button>
+            </div>
+            <p id="audio-prompt" class="mt-8 text-slate-400 text-sm">คลิกเพิ่มเริ่มต้นห้วงผลึกความคิด</p>
+        </section>
+        <section id="sanctuary-screen" class="hidden w-full max-w-4xl mx-auto transition-all duration-1000">
+             <div class="glass-card rounded-2xl p-6 md:p-8">
+                <div class="text-center mb-8">
+                    <h2 id="sanctuary-title" class="text-3xl font-bold mb-2 text-slate-800"></h2>
+                    <p id="sanctuary-subtitle" class="text-slate-600"></p>
+                </div>
+                <div id="journal-section">
+                    <h3 class="text-xl font-semibold mb-4 text-center text-slate-700">บันทึกความทรงจำลงในผลึก</h3>
+                    <form id="memory-form">
+                        <textarea id="memory-input" class="w-full h-24 p-4 rounded-lg bg-white/40 border border-white/50 focus:ring-2 focus:ring-slate-400 focus:outline-none placeholder-slate-400 text-slate-700" placeholder="พิมพ์ความรู้สึกของคุณที่นี่..."></textarea>
+                        <button type="submit" class="w-full mt-4 py-3 rounded-lg bg-white/50 hover:bg-white/80 font-semibold text-slate-700 transition">เก็บรักษาความทรงจำ</button>
+                    </form>
+                </div>
+                <div id="memory-crystal-container" class="mt-8">
+                </div>
+             </div>
+             <button id="back-button" class="block mx-auto mt-8 text-slate-500 hover:text-slate-800 transition">กลับไปเลือกแสงสี</button>
+        </section>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const body = document.body;
+            const selectionScreen = document.getElementById('selection-screen');
+            const sanctuaryScreen = document.getElementById('sanctuary-screen');
+            const particleContainer = document.getElementById('particle-container');
+            const moodButtons = document.querySelectorAll('.mood-button');
+            const sanctuaryTitle = document.getElementById('sanctuary-title');
+            const sanctuarySubtitle = document.getElementById('sanctuary-subtitle');
+            const memoryForm = document.getElementById('memory-form');
+            const memoryInput = document.getElementById('memory-input');
+            const memoryContainer = document.getElementById('memory-crystal-container');
+            const backButton = document.getElementById('back-button');
+            const audioPrompt = document.getElementById('audio-prompt');
+
+            let ambientSound; 
+            let isAudioReady = false;
+            let isAudioStarted = false; 
+
+            async function setupAudio() {
+                if (isAudioReady) return;
+                try {
+                    await Tone.start();
+                    
+                    const ambientPad = new Tone.PolySynth(Tone.FMSynth, {
+                        volume: -35, 
+                        oscillator: { type: 'sine' },
+                        envelope: { attack: 4, decay: 0.5, sustain: 0.8, release: 5 },
+                        harmonicity: 1.01
+                    }).toDestination();
+
+                    const reverb = new Tone.Reverb({ decay: 10, wet: 0.7 }).toDestination();
+                    ambientPad.connect(reverb);
+                    
+                    const ambientChord = ["C3", "G3", "A3", "E4"];
+                    const ambientLoop = new Tone.Loop(time => {
+                        ambientPad.triggerAttackRelease(ambientChord, "8m", time);
+                    }, "12s"); 
+
+                    ambientSound = {
+                        start: () => { 
+                            if (Tone.Transport.state !== 'started') {
+                                Tone.Transport.start(); 
+                            }
+                            ambientLoop.start(0); 
+                        },
+                        stop: () => { ambientLoop.stop(); Tone.Transport.stop(); }
+                    };
+                    
+                    isAudioReady = true;
+
+                } catch (error) {
+                    console.error("Failed to setup audio synthesizers:", error);
+                    isAudioReady = false;
+                }
+            }
+
+            const moodData = {
+                happy: {
+                    theme: 'theme-happy',
+                    title: 'พื้นที่แห่งความสุข',
+                    subtitle: 'ให้แสงสีสันโอบล้อมคุณไว้ พลังงานแห่งความสุขกำลังเบ่งบาน',
+                },
+                sad: {
+                    theme: 'theme-sad',
+                    title: 'โอเอซิสแห่งความสงบ',
+                    subtitle: 'ไม่เป็นไรเลยที่จะรู้สึก... ให้สายลมทะลแห่งความเข้าใจปลอบโยนคุณ',
+                },
+                empty: {
+                    theme: 'theme-empty',
+                    title: 'ห้วงแห่งความว่างเปล่า',
+                    subtitle: 'ในความเงียบสงบนี้ คุณจะได้ค้นพบแสงสว่างที่ซ่อนอยู่ภายใน',
+                }
+            };
+            
+            let currentMood = null;
+
+            
+            moodButtons.forEach(button => {
+                button.addEventListener('click', async () => { 
+                    
+                    if (!isAudioStarted) {
+                        await setupAudio();
+                        if (isAudioReady && ambientSound) {
+                            ambientSound.start();
+                            isAudioStarted = true;
+                            if (audioPrompt) audioPrompt.classList.add('hidden');
+                        }
+                    }
+
+                    const mood = button.dataset.mood;
+                    currentMood = mood;
+                    enterSanctuary(mood);
+                });
+            });
+
+            backButton.addEventListener('click', () => {
+                exitSanctuary();
+            });
+
+            memoryForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const text = memoryInput.value.trim();
+                if (text && currentMood) {
+                    saveMemory(text, currentMood);
+                    memoryInput.value = '';
+                }
+            });
+
+            function enterSanctuary(mood) {
+                const data = moodData[mood];
+                
+                selectionScreen.classList.add('fade-exit', 'fade-exit-active');
+                setTimeout(() => {
+                    selectionScreen.classList.add('hidden');
+                    selectionScreen.classList.remove('fade-exit', 'fade-exit-active');
+                    
+                    body.className = `text-slate-700 ${data.theme}`;
+                    sanctuaryTitle.textContent = data.title;
+                    sanctuarySubtitle.textContent = data.subtitle;
+                    
+                    sanctuaryScreen.classList.remove('hidden');
+                    sanctuaryScreen.classList.add('fade-enter');
+                    requestAnimationFrame(() => {
+                        sanctuaryScreen.classList.add('fade-enter-active');
+                    });
+                }, 800);
+
+                generateParticles(mood);
+                renderMemories();
+            }
+            
+            function exitSanctuary() {
+                currentMood = null;
+                
+                sanctuaryScreen.classList.remove('fade-enter', 'fade-enter-active');
+                sanctuaryScreen.classList.add('fade-exit', 'fade-exit-active');
+
+                setTimeout(() => {
+                    sanctuaryScreen.classList.add('hidden');
+                    sanctuaryScreen.classList.remove('fade-exit', 'fade-exit-active');
+                    
+                    body.className = 'theme-base text-slate-700 antialiased';
+                    
+                    selectionScreen.classList.remove('hidden');
+                    selectionScreen.classList.add('fade-enter');
+                    requestAnimationFrame(() => {
+                        selectionScreen.classList.add('fade-enter-active');
+                    });
+                }, 800);
+                
+                clearParticles();
+            }
+
+            function generateParticles(mood) {
+                clearParticles();
+                const particleCount = 20;
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = `particle particle-${mood}`;
+                    particle.style.left = `${Math.random() * 100}%`;
+                    particle.style.top = `${Math.random() * 100}%`;
+                    particle.style.animationDelay = `${Math.random() * 20}s`;
+                    particleContainer.appendChild(particle);
+                }
+                if (mood === 'sad') {
+                    sanctuaryScreen.querySelector('.glass-card').style.opacity = '0.8';
+                } else {
+                    sanctuaryScreen.querySelector('.glass-card').style.opacity = '1';
+                }
+            }
+
+            function clearParticles() {
+                particleContainer.innerHTML = '';
+            }
+
+            function getMemories() {
+                return JSON.parse(localStorage.getItem('lumeria_memories_pastel')) || [];
+            }
+
+            function saveMemory(text, mood) {
+                const memories = getMemories();
+                const newMemory = {
+                    id: Date.now(),
+                    text: text,
+                    mood: mood,
+                    date: new Date().toLocaleDateString('th-TH')
+                };
+                memories.unshift(newMemory);
+                localStorage.setItem('lumeria_memories_pastel', JSON.stringify(memories.slice(0, 50)));
+                renderMemories();
+                generateReflection(newMemory.text, newMemory.mood, newMemory.id);
+            }
+
+            async function generateReflection(text, mood, memoryId) {
+                const reflectionContainer = document.getElementById(`reflection-${memoryId}`);
+                if (!reflectionContainer) return;
+                reflectionContainer.innerHTML = `<p class="text-indigo-400 animate-pulse">กำลังรับฟังเสียงสะท้อนจาก Lumeria...</p>`;
+                reflectionContainer.classList.remove('hidden');
+                
+                const apiKey = "AIzaSyB7S5gD6eDOElQv7LdfOp6D8wNOIYSx8uA"; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                const systemPrompt = "คุณคือ 'ผู้รับฟังแห่ง Lumeria' ผู้มีจิตใจอ่อนโยนและเข้าใจผู้อื่นอย่างลึกซึ้ง ภารกิจของคุณคือการอ่านข้อความที่ได้รับอย่างตั้งใจ **จับใจความสำคัญและความรู้สึกที่ซ่อนอยู่** แล้วตอบกลับด้วยถ้อยคำที่แสดงถึง **ความเข้าใจ** และ **ความเห็นอกเห็นใจ** เสมือนเพื่อนที่คอยรับฟังอยู่ข้างๆ จงมอบพลังบวกและความหวังที่อ่อนโยนกลับไปให้พวกเขา ตอบเป็นภาษาไทยที่นุ่มนวล ไม่เกิน 2-3 ประโยค และต้องอ้างอิงถึงสิ่งที่เขาเขียนเสมอ";
+                const moodThai = { happy: 'มีความสุข', sad: 'เศร้า', empty: 'ว่างเปล่า' }[mood];
+                const userQuery = `ตอนนี้ฉันรู้สึก '${moodThai}' และนี่คือความคิดของฉัน: "${text}" ช่วยมอบข้อคิดให้ฉันหน่อย`;
+                
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            systemInstruction: { parts: [{ text: systemPrompt }] },
+                            contents: [{ parts: [{ text: userQuery }] }]
+                        })
+                    });
+
+                    if (!response.ok) throw new Error(`API call failed: ${response.status}`);
+                    const result = await response.json();
+                    const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (generatedText) {
+                        reflectionContainer.innerHTML = `
+                            <h4 class="font-semibold text-indigo-500 mb-1">เสียงสะท้อนจาก Lumeria ✨</h4>
+                            <p class="text-slate-600 italic">"${generatedText}"</p>
+                        `;
+                    } else {
+                        throw new Error("No content generated.");
+                    }
+                } catch (error) {
+                    console.error("Error generating reflection:", error);
+                    reflectionContainer.innerHTML = `<p class="text-red-500">เกิดข้อผิดพลาดในการเชื่อมต่อกับ Lumeria</p>`;
+                }
+            }
+
+            function renderMemories() {
+                memoryContainer.innerHTML = '';
+                const memories = getMemories();
+                
+                if (memories.length > 0) {
+                   const memoriesTitle = document.createElement('h3');
+                    memoriesTitle.className = "text-xl font-semibold mb-4 text-center text-slate-700";
+                    memoriesTitle.textContent = "ผลึกความทรงจำของคุณ";
+                    memoryContainer.appendChild(memoriesTitle);
+                }
+
+                memories.forEach(mem => {
+                    const moodColorClass = {
+                        happy: 'border-amber-300',
+                        sad: 'border-sky-300',
+                        empty: 'border-slate-300'
+                    }[mem.mood];
+
+                    const memoryEl = document.createElement('div');
+                    memoryEl.className = `p-4 mb-3 border-l-4 rounded-r-lg bg-white/50 ${moodColorClass}`;
+                    memoryEl.innerHTML = `
+                        <p class="text-slate-700">${mem.text}</p>
+                        <p class="text-xs text-slate-400 mt-2 text-right">${mem.date}</p>
+                        <div id="reflection-${mem.id}" class="mt-3 pt-3 border-t border-slate-200 text-sm hidden">
+                        </div>
+                    `;
+                    memoryContainer.appendChild(memoryEl);
+                });
+            }
+
+            renderMemories();
+        });
+    </script>
+</body>
+</html>
