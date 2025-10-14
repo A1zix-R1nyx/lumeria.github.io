@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumeria: สถานที่พักใจส่วนตัวของคุณ</title>
+    <link rel="icon" href="https://img2.pic.in.th/pic/image2047b968080d33f2.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&family=Noto+Sans+Thai:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/15.0.4/Tone.js"></script>
     <style>
         body {
             font-family: 'Noto Sans Thai', 'Inter', sans-serif;
@@ -82,10 +83,10 @@
                     <span class="text-xl font-semibold text-slate-800">ความว่างเปล่า</span>
                 </button>
             </div>
-            <p id="audio-prompt" class="mt-8 text-slate-400 text-sm">คลิกเพิ่มเริ่มต้นห้วงผลึกความคิด</p>
+            <p id="audio-prompt" class="mt-8 text-slate-400 text-sm">คลิกเพื่อเริ่มต้นห้วงผลึกความคิด</p>
         </section>
         <section id="sanctuary-screen" class="hidden w-full max-w-4xl mx-auto transition-all duration-1000">
-             <div class="glass-card rounded-2xl p-6 md:p-8">
+            <div class="glass-card rounded-2xl p-6 md:p-8">
                 <div class="text-center mb-8">
                     <h2 id="sanctuary-title" class="text-3xl font-bold mb-2 text-slate-800"></h2>
                     <p id="sanctuary-subtitle" class="text-slate-600"></p>
@@ -99,8 +100,8 @@
                 </div>
                 <div id="memory-crystal-container" class="mt-8">
                 </div>
-             </div>
-             <button id="back-button" class="block mx-auto mt-8 text-slate-500 hover:text-slate-800 transition">กลับไปเลือกแสงสี</button>
+            </div>
+            <button id="back-button" class="block mx-auto mt-8 text-slate-500 hover:text-slate-800 transition">กลับไปเลือกแสงสี</button>
         </section>
     </div>
     <script>
@@ -121,47 +122,7 @@
             let ambientSound; 
             let isAudioReady = false;
             let isAudioStarted = false; 
-
-            // ฟังก์ชันนี้จะถูกเรียกเมื่อมีการคลิกครั้งแรกเท่านั้น
-            async function setupAudio() {
-                if (isAudioReady) return;
-                try {
-                    // 1. เรียก Tone.start() เพื่อเริ่มต้น AudioContext ที่ถูกระงับไว้ (เนื่องจากการคลิกของผู้ใช้)
-                    await Tone.start();
-                    
-                    // 2. สร้าง Synth และ Effects หลังจาก AudioContext ถูกเริ่มแล้ว
-                    const ambientPad = new Tone.PolySynth(Tone.FMSynth, {
-                        volume: -35, 
-                        oscillator: { type: 'sine' },
-                        envelope: { attack: 4, decay: 0.5, sustain: 0.8, release: 5 },
-                        harmonicity: 1.01
-                    }).toDestination();
-
-                    const reverb = new Tone.Reverb({ decay: 10, wet: 0.7 }).toDestination();
-                    ambientPad.connect(reverb);
-                    
-                    const ambientChord = ["C3", "G3", "A3", "E4"];
-                    const ambientLoop = new Tone.Loop(time => {
-                        ambientPad.triggerAttackRelease(ambientChord, "8m", time);
-                    }, "12s"); 
-
-                    ambientSound = {
-                        start: () => { 
-                            if (Tone.Transport.state !== 'started') {
-                                Tone.Transport.start(); 
-                            }
-                            ambientLoop.start(0); 
-                        },
-                        stop: () => { ambientLoop.stop(); Tone.Transport.stop(); }
-                    };
-                    
-                    isAudioReady = true;
-
-                } catch (error) {
-                    console.error("Failed to setup audio synthesizers:", error);
-                    isAudioReady = false;
-                }
-            }
+            let currentMood = null;
 
             const moodData = {
                 happy: {
@@ -180,14 +141,59 @@
                     subtitle: 'ในความเงียบสงบนี้ คุณจะได้ค้นพบแสงสว่างที่ซ่อนอยู่ภายใน',
                 }
             };
-            
-            let currentMood = null;
 
-            
+            async function setupAudio() {
+                if (typeof Tone === 'undefined') {
+                    console.error("Tone.js is not loaded.");
+                    return;
+                }
+                if (isAudioReady) return;
+
+                try {
+                    await Tone.start();
+                    console.log(`AudioContext is now: ${Tone.context.state}`);
+                    
+                    const ambientPad = new Tone.PolySynth(Tone.Synth, {
+                        volume: -35, 
+                        oscillator: { type: 'sine' },
+                        envelope: { attack: 4, decay: 0.5, sustain: 0.8, release: 5 },
+                    }); 
+
+                    const reverb = new Tone.Reverb({ decay: 10, wet: 0.7 }).toDestination();
+                    ambientPad.connect(reverb);
+                    
+                    const ambientChord = ["C3", "G3", "A3", "E4"];
+                    const ambientLoop = new Tone.Loop(time => {
+                        ambientPad.triggerAttackRelease(ambientChord, "8m", time);
+                    }, "12s"); 
+
+                    ambientSound = {
+                        start: () => { 
+                            if (Tone.Transport.state !== 'started') {
+                                Tone.Transport.start(); 
+                            }
+                            ambientLoop.start(0); 
+                        },
+                        stop: () => { 
+                            ambientLoop.stop(); 
+                            Tone.Transport.stop(); 
+                        }
+                    };
+                    
+                    isAudioReady = true;
+
+                } catch (error) {
+                    console.error("Failed to setup audio synthesizers:", error);
+                    isAudioReady = false;
+                }
+            }
+
             moodButtons.forEach(button => {
                 button.addEventListener('click', async () => { 
                     
-                    // ตรวจสอบและเริ่มต้นเสียงในการคลิกครั้งแรก
+                    const mood = button.dataset.mood;
+                    currentMood = mood;
+
                     if (!isAudioStarted) {
                         await setupAudio();
                         if (isAudioReady && ambientSound) {
@@ -197,8 +203,6 @@
                         }
                     }
 
-                    const mood = button.dataset.mood;
-                    currentMood = mood;
                     enterSanctuary(mood);
                 });
             });
@@ -224,7 +228,7 @@
                     selectionScreen.classList.add('hidden');
                     selectionScreen.classList.remove('fade-exit', 'fade-exit-active');
                     
-                    body.className = `text-slate-700 ${data.theme}`;
+                    body.className = `text-slate-700 antialiased ${data.theme}`;
                     sanctuaryTitle.textContent = data.title;
                     sanctuarySubtitle.textContent = data.subtitle;
                     
@@ -236,7 +240,7 @@
                 }, 800);
 
                 generateParticles(mood);
-                renderMemories();
+                renderMemories(mood);
             }
             
             function exitSanctuary() {
@@ -259,6 +263,7 @@
                 }, 800);
                 
                 clearParticles();
+                if (audioPrompt) audioPrompt.classList.remove('hidden');
             }
 
             function generateParticles(mood) {
@@ -271,11 +276,6 @@
                     particle.style.top = `${Math.random() * 100}%`;
                     particle.style.animationDelay = `${Math.random() * 20}s`;
                     particleContainer.appendChild(particle);
-                }
-                if (mood === 'sad') {
-                    sanctuaryScreen.querySelector('.glass-card').style.opacity = '0.8';
-                } else {
-                    sanctuaryScreen.querySelector('.glass-card').style.opacity = '1';
                 }
             }
 
@@ -293,17 +293,23 @@
                     id: Date.now(),
                     text: text,
                     mood: mood,
-                    date: new Date().toLocaleDateString('th-TH')
+                    date: new Date().toLocaleDateString('th-TH', { 
+                        day: 'numeric', 
+                        month: 'short', 
+                        year: 'numeric' 
+                    })
                 };
-                memories.unshift(newMemory);
+                memories.unshift(newMemory); 
                 localStorage.setItem('lumeria_memories_pastel', JSON.stringify(memories.slice(0, 50)));
-                renderMemories();
+                
+                renderMemories(mood); 
                 generateReflection(newMemory.text, newMemory.mood, newMemory.id);
             }
 
             async function generateReflection(text, mood, memoryId) {
                 const reflectionContainer = document.getElementById(`reflection-${memoryId}`);
                 if (!reflectionContainer) return;
+                
                 reflectionContainer.innerHTML = `<p class="text-indigo-400 animate-pulse">กำลังรับฟังเสียงสะท้อนจาก Lumeria...</p>`;
                 reflectionContainer.classList.remove('hidden');
                 
@@ -314,66 +320,98 @@
                 const moodThai = { happy: 'มีความสุข', sad: 'เศร้า', empty: 'ว่างเปล่า' }[mood];
                 const userQuery = `ตอนนี้ฉันรู้สึก '${moodThai}' และนี่คือความคิดของฉัน: "${text}" ช่วยมอบข้อคิดให้ฉันหน่อย`;
                 
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            systemInstruction: { parts: [{ text: systemPrompt }] },
-                            contents: [{ parts: [{ text: userQuery }] }]
-                        })
-                    });
+                const MAX_RETRIES = 3;
+                for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                systemInstruction: { parts: [{ text: systemPrompt }] },
+                                contents: [{ parts: [{ text: userQuery }] }]
+                            })
+                        });
 
-                    if (!response.ok) throw new Error(`API call failed: ${response.status}`);
-                    const result = await response.json();
-                    const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (!response.ok) {
+                            if (response.status === 429 && attempt < MAX_RETRIES - 1) {
+                                const delay = Math.pow(2, attempt) * 1000;
+                                await new Promise(resolve => setTimeout(resolve, delay));
+                                continue;
+                            }
+                            throw new Error(`API call failed: ${response.status}`);
+                        }
 
-                    if (generatedText) {
-                        reflectionContainer.innerHTML = `
-                            <h4 class="font-semibold text-indigo-500 mb-1">เสียงสะท้อนจาก Lumeria ✨</h4>
-                            <p class="text-slate-600 italic">"${generatedText}"</p>
-                        `;
-                    } else {
-                        throw new Error("No content generated.");
+                        const result = await response.json();
+                        const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                        if (generatedText) {
+                            reflectionContainer.innerHTML = `
+                                <h4 class="font-semibold text-indigo-500 mb-1">เสียงสะท้อนจาก Lumeria ✨</h4>
+                                <p class="text-slate-600 italic">"${generatedText}"</p>
+                            `;
+                            return; 
+                        } else {
+                            throw new Error("No content generated.");
+                        }
+                    } catch (error) {
+                        console.error(`Attempt ${attempt + 1}: Error generating reflection:`, error);
+                        if (attempt === MAX_RETRIES - 1) {
+                            
+                            reflectionContainer.innerHTML = `<p class="text-red-500">เกิดข้อผิดพลาดในการเชื่อมต่อกับ Lumeria</p>`;
+                        } else {
+                        
+                            const delay = Math.pow(2, attempt) * 1000;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                        }
                     }
-                } catch (error) {
-                    console.error("Error generating reflection:", error);
-                    reflectionContainer.innerHTML = `<p class="text-red-500">เกิดข้อผิดพลาดในการเชื่อมต่อกับ Lumeria</p>`;
                 }
             }
 
-            function renderMemories() {
+            function renderMemories(filterMood = null) {
                 memoryContainer.innerHTML = '';
-                const memories = getMemories();
+                const allMemories = getMemories();
                 
+                const memories = filterMood 
+                    ? allMemories.filter(mem => mem.mood === filterMood) 
+                    : allMemories;
+
                 if (memories.length > 0) {
                    const memoriesTitle = document.createElement('h3');
                     memoriesTitle.className = "text-xl font-semibold mb-4 text-center text-slate-700";
-                    memoriesTitle.textContent = "ผลึกความทรงจำของคุณ";
+                    memoriesTitle.textContent = filterMood ? `ผลึกความทรงจำแห่ง${moodData[filterMood].title.split('พื้นที่แห่ง')[1] || filterMood}` : "ผลึกความทรงจำทั้งหมดของคุณ";
                     memoryContainer.appendChild(memoriesTitle);
+                } else if (filterMood) {
+                    memoryContainer.innerHTML = `<p class="text-center text-slate-500 italic mt-4">ยังไม่มีผลึกความทรงจำในห้วงนี้ ลองบันทึกห้วงความคิเของคุณสิ</p>`;
+                    return;
                 }
 
                 memories.forEach(mem => {
                     const moodColorClass = {
-                        happy: 'border-amber-300',
-                        sad: 'border-sky-300',
-                        empty: 'border-slate-300'
+                        happy: 'border-amber-400',
+                        sad: 'border-sky-400',
+                        empty: 'border-slate-400'
                     }[mem.mood];
 
                     const memoryEl = document.createElement('div');
-                    memoryEl.id = `memory-${mem.id}`; // Add ID for potential future removal/update
-                    memoryEl.className = `p-4 mb-3 border-l-4 rounded-r-lg bg-white/50 ${moodColorClass}`;
+                    memoryEl.id = `memory-${mem.id}`;
+                    memoryEl.className = `p-4 mb-4 border-l-4 rounded-r-lg bg-white/60 ${moodColorClass} shadow-md`; 
                     memoryEl.innerHTML = `
                         <p class="text-slate-700">${mem.text}</p>
                         <p class="text-xs text-slate-400 mt-2 text-right">${mem.date}</p>
-                        <div id="reflection-${mem.id}" class="mt-3 pt-3 border-t border-slate-200 text-sm hidden">
+                        <div id="reflection-${mem.id}" class="mt-3 pt-3 border-t border-slate-300 text-sm hidden">
                         </div>
                     `;
                     memoryContainer.appendChild(memoryEl);
+
+                    if (mem.reflection && mem.reflection !== 'loading') {
+                        document.getElementById(`reflection-${mem.id}`).innerHTML = `
+                            <h4 class="font-semibold text-indigo-500 mb-1">เสียงสะท้อนจาก Lumeria ✨</h4>
+                            <p class="text-slate-600 italic">"${mem.reflection}"</p>
+                        `;
+                        document.getElementById(`reflection-${mem.id}`).classList.remove('hidden');
+                    }
                 });
             }
-
-            renderMemories();
         });
     </script>
 </body>
