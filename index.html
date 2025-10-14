@@ -67,7 +67,7 @@
     <div id="particle-container" class="absolute top-0 left-0 w-full h-full overflow-hidden z-0"></div>
     <div class="relative min-h-screen flex items-center justify-center p-4 z-10">
         <section id="selection-screen" class="text-center transition-all duration-1000">
-            <h1 class="text-3xl md:text-5xl font-bold mb-4 text-slate-800">ยินดีต้อนรับสู่ผลึกห้วงความคิดลูมีเลีย</h1>
+            <h1 class="text-3xl md:text-5xl font-bold mb-4 text-slate-800">ยินดีต้อนรับสู่ผลึกห้วงความคิดลูมิเลีย</h1>
             <p class="text-lg md:text-2xl text-slate-500 mb-12">วันนี้... แสงสีใดที่สะท้อนความรู้สึกของคุณ?</p>
             <div class="flex flex-col md:flex-row gap-8 justify-center">
                 <button data-mood="happy" class="mood-button flex flex-col items-center p-6 rounded-2xl glass-card hover:bg-white/80">
@@ -381,7 +381,7 @@
                     memoriesTitle.textContent = filterMood ? `ผลึกความทรงจำแห่ง${moodData[filterMood].title.split('พื้นที่แห่ง')[1] || filterMood}` : "ผลึกความทรงจำทั้งหมดของคุณ";
                     memoryContainer.appendChild(memoriesTitle);
                 } else if (filterMood) {
-                    memoryContainer.innerHTML = `<p class="text-center text-slate-500 italic mt-4">ยังไม่มีผลึกความทรงจำในห้วงนี้ ลองบันทึกห้วงความคิเของคุณสิ</p>`;
+                    memoryContainer.innerHTML = `<p class="text-center text-slate-500 italic mt-4">ยังไม่มีผลึกความทรงจำในห้วงนี้ ลองบันทึกห้วงความคิดของคุณสิ</p>`;
                     return;
                 }
 
