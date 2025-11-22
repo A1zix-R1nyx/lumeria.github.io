@@ -364,27 +364,38 @@
                 const reflectionContainer = document.getElementById(`reflection-${memoryId}`);
                 if (!reflectionContainer) return;
                 
+                // แสดงสถานะกำลังโหลด
                 reflectionContainer.innerHTML = `<p class="text-indigo-400 animate-pulse">กำลังรับฟังเสียงสะท้อนจาก Lumeria...</p>`;
                 reflectionContainer.classList.remove('hidden');
-                
-                const apiKey = "AIzaSyATMAgzrbTOBLXZPKstUbHRkPLTkW7Lz-Y"; 
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-                
-                const systemPrompt = "คุณคือ 'ผู้รับฟังแห่ง Lumeria' ผู้มีจิตใจอ่อนโยนและเข้าใจผู้อื่นอย่างลึกซึ้ง ภารกิจของคุณคือการอ่านข้อความที่ได้รับอย่างตั้งใจ **จับใจความสำคัญและความรู้สึกที่ซ่อนอยู่** แล้วตอบกลับด้วยถ้อยคำที่แสดงถึง **ความเข้าใจ** และ **ความเห็นอกเห็นใจ** เสมือนเพื่อนที่คอยรับฟังอยู่ข้างๆ จงมอบพลังบวกและความหวังที่อ่อนโยนกลับไปให้พวกเขา ตอบเป็นภาษาไทยที่นุ่มนวล ไม่เกิน 2-3 ประโยค และต้องอ้างอิงถึงสิ่งที่เขาเขียนเสมอ";
-                const moodThai = { happy: 'มีความสุข', sad: 'เศร้า', empty: 'ว่างเปล่า', complex: 'รู้สึกซับซ้อนอธิบายไม่ถูก' }[mood];
+
+                // กำหนดค่า API และ Model ที่ถูกต้องสำหรับสภาพแวดล้อมนี้
+                const apiKey = "AIzaSyATMAgzrbTOBLXZPKstUbHRkPLTkW7Lz-Y"; // ระบบจะจัดการ API key ให้โดยอัตโนมัติ
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+                // System Instruction เพื่อกำหนดบุคลิกของผู้รับฟัง
+                const systemPrompt = "คุณคือ \"ผู้รับฟังแห่ง Lumeria\" ผู้มีจิตใจอ่อนโยนและเข้าใจผู้อื่นอย่างลึกซึ้ง ภารกิจของคุณคือการอ่านข้อความที่ได้รับอย่างตั้งใจ จับใจความสำคัญและความรู้สึกที่ซ่อนอยู่ แล้วตอบกลับด้วยถ้อยคำที่แสดงถึงความเข้าใจ และความเห็นอกเห็นใจ เสมือนเพื่อนที่คอยรับฟังอยู่ข้างๆ จงมอบพลังบวกและความหวังที่อ่อนโยนกลับไปให้พวกเขา ตอบเป็นภาษาไทยที่นุ่มนวล สั้นกระชับไม่เกิน 2-3 ประโยค และต้องเกี่ยวข้องกับถึงสิ่งที่เขาเขียนเสมอ";
+
+                const moodThai = {
+                    happy: 'มีความสุข',
+                    sad: 'เศร้า',
+                    empty: 'ว่างเปล่า',
+                    complex: 'รู้สึกซับซ้อนอธิบายไม่ถูก'
+                }[mood];
+
                 const userQuery = `ตอนนี้ฉันรู้สึก '${moodThai}' และนี่คือความคิดของฉัน: "${text}" ช่วยมอบข้อคิดให้ฉันหน่อย`;
-                
+
                 const payload = {
                     contents: [{ parts: [{ text: userQuery }] }],
                     systemInstruction: { parts: [{ text: systemPrompt }] },
                     generationConfig: {
                         temperature: 0.7,
-                        topP: 0.95,
-                        maxOutputTokens: 8192,
-                    }
+                        topP: 0.95
+                    },
                 };
 
                 const MAX_RETRIES = 3;
+
+                // การใช้ Exponential Backoff เพื่อจัดการกับข้อผิดพลาด Rate Limit (429)
                 for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
                     try {
                         const response = await fetch(apiUrl, {
@@ -395,60 +406,79 @@
 
                         if (!response.ok) {
                             if (response.status === 429 && attempt < MAX_RETRIES - 1) {
+                                // หน่วงเวลาตาม Exponential Backoff ก่อนลองใหม่
                                 const delay = Math.pow(2, attempt) * 1000;
+                                console.warn(`Attempt ${attempt + 1}: Rate limit exceeded (429). Retrying in ${delay / 1000}s...`);
                                 await new Promise(resolve => setTimeout(resolve, delay));
-                                continue;
+                                continue; 
                             }
-                            throw new Error(`API call failed: ${response.status}`);
+                            throw new Error(`API call failed with status: ${response.status}`);
                         }
 
                         const result = await response.json();
-                        
-                        if (!result || !result.candidates || result.candidates.length === 0) {
-                            console.error("Invalid or empty response from API:", JSON.stringify(result, null, 2));
-                            throw new Error("Invalid or empty response from API.");
-                        }
-
-                        const generatedText = result.candidates[0]?.content?.parts?.[0]?.text;
+                        const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
                         if (generatedText) {
+                            // อัปเดตข้อมูลใน Local Storage
+                            const memories = getMemories();
+                            const memoryIndex = memories.findIndex(m => m.id === memoryId);
+
+                            if (memoryIndex !== -1) {
+                                memories[memoryIndex].reflection = generatedText;
+                                localStorage.setItem('lumeria_memories_pastel', JSON.stringify(memories));
+                            }
+                            
+                            // แสดงผลลัพธ์ที่สร้างขึ้นบนหน้าจอ
                             reflectionContainer.innerHTML = `
-                                <h4 class="font-semibold text-indigo-500 mb-1">เสียงสะท้อนจาก Lumeria ✨</h4>
+                                <h4 class="font-semibold text-indigo-500 mb-1">เสียงสะท้อนจาก Lumeria</h4>
                                 <p class="text-slate-600 italic">"${generatedText}"</p>
                             `;
-                            return; 
+                            return; // สำเร็จ
                         } else {
-                            console.error("No text content in API response. Full response:", JSON.stringify(result, null, 2));
                             throw new Error("No text content in API response.");
                         }
+
                     } catch (error) {
                         console.error(`Attempt ${attempt + 1}: Error generating reflection:`, error);
                         if (attempt === MAX_RETRIES - 1) {
-                            reflectionContainer.innerHTML = `<p class="text-red-500">เกิดข้อผิดพลาดในการเชื่อมต่อกับ Lumeria</p>`;
-                        } else {
-                            const delay = Math.pow(2, attempt) * 1000;
-                            await new Promise(resolve => setTimeout(resolve, delay));
+                            // แสดงข้อความผิดพลาดเมื่อล้มเหลวในการลองครั้งสุดท้าย
+                            reflectionContainer.innerHTML = '<p class="text-red-500">เกิดข้อผิดพลาดในการเชื่อมต่อกับ Lumeria</p>';
+                            break; 
                         }
+                        // หน่วงเวลาตาม Exponential Backoff ก่อนลองใหม่
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
                     }
                 }
             }
 
+            // --- Memory Rendering ---
             function renderMemories(filterMood = null) {
-                memoryContainer.innerHTML = '';
+                memoryContainer.innerHTML = "";
+
                 const allMemories = getMemories();
-                
-                const memories = filterMood 
-                    ? allMemories.filter(mem => mem.mood === filterMood) 
+                const memories = filterMood
+                    ? allMemories.filter(mem => mem.mood === filterMood)
                     : allMemories;
 
                 if (memories.length > 0) {
-                   const memoriesTitle = document.createElement('h3');
+                    const memoriesTitle = document.createElement('h3');
                     memoriesTitle.className = "text-xl font-semibold mb-4 text-center text-slate-700";
-                    const moodName = { happy: 'ความสุข', sad: 'ความสงบ', empty: 'ความว่างเปล่า', complex: 'ความรู้สึกซับซ้อน'}[filterMood];
-                    memoriesTitle.textContent = filterMood ? `ผลึกความทรงจำแห่ง${moodName}` : "ผลึกความทรงจำทั้งหมดของท่าน";
+                    
+                    const moodName = { 
+                        happy: 'ความสุข', 
+                        sad: 'ความเศร้า', 
+                        empty: 'ความว่างเปล่า', 
+                        complex: 'ความรู้สึกซับซ้อน' 
+                    }[filterMood];
+
+                    memoriesTitle.textContent = filterMood ?
+                        `ผลึกความทรงจำแห่ง ${moodName}` :
+                        "ผลึกความทรงจำทั้งหมดของท่าน";
+
                     memoryContainer.appendChild(memoriesTitle);
                 } else if (filterMood) {
-                    memoryContainer.innerHTML = `<p class="text-center text-slate-500 italic mt-4">ยังไม่มีผลึกความทรงจำในห้วงนี้ ลองบันทึกห้วงความคิดของท่านสิ</p>`;
+                    memoryContainer.innerHTML = '<p class="text-center text-slate-500 italic mt-4">ยังไม่มีผลึกความทรงจำในห้วงนี้ ลองบันทึกห้วงความคิดของท่าน</p>';
                     return;
                 }
 
@@ -462,30 +492,36 @@
 
                     const memoryEl = document.createElement('div');
                     memoryEl.id = `memory-${mem.id}`;
-                    memoryEl.className = `p-4 mb-4 border-l-4 rounded-r-lg bg-white/60 ${moodColorClass} shadow-md`; 
+                    memoryEl.className = `p-4 mb-4 border-l-4 rounded-r-lg bg-white/60 ${moodColorClass} shadow-md`;
+                    
+                    // ใช้ mem.text ที่ส่งมาจาก localStorage
                     memoryEl.innerHTML = `
                         <p class="text-slate-700">${mem.text}</p>
                         <p class="text-xs text-slate-400 mt-2 text-right">${mem.date}</p>
                         <div id="reflection-${mem.id}" class="mt-3 pt-3 border-t border-slate-300 text-sm hidden">
+                            <!-- Reflection content goes here -->
                         </div>
                     `;
                     memoryContainer.appendChild(memoryEl);
 
+                    const reflectionDiv = document.getElementById(`reflection-${mem.id}`);
+
+                    // แสดง Reflection ที่บันทึกไว้ หรือสถานะกำลังโหลด
                     if (mem.reflection && mem.reflection !== 'loading') {
-                        document.getElementById(`reflection-${mem.id}`).innerHTML = `
-                            <h4 class="font-semibold text-indigo-500 mb-1">เสียงสะท้อนจาก Lumeria ✨</h4>
+                        reflectionDiv.innerHTML = `
+                            <h4 class="font-semibold text-indigo-500 mb-1">เสียงสะท้อนจาก Lumeria</h4>
                             <p class="text-slate-600 italic">"${mem.reflection}"</p>
                         `;
-                        document.getElementById(`reflection-${mem.id}`).classList.remove('hidden');
+                        reflectionDiv.classList.remove('hidden');
+                    } else if (mem.reflection === 'loading') {
+                        // ถ้าสถานะเป็น loading และเพิ่งถูกเรียก API ไป จะต้องแสดงสถานะโหลด
+                        reflectionDiv.innerHTML = `<p class="text-indigo-400 animate-pulse">กำลังรับฟังเสียงสะท้อนจาก Lumeria...</p>`;
+                        reflectionDiv.classList.remove('hidden');
                     }
                 });
+
             }
         });
     </script>
 </body>
 </html>
-
-
-
-
-
