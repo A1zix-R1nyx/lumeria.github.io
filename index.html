@@ -367,9 +367,9 @@
                 reflectionContainer.innerHTML = `<p class="text-indigo-400 animate-pulse">กำลังรับฟังเสียงสะท้อนจาก Lumeria...</p>`;
                 reflectionContainer.classList.remove('hidden');
 
-                // นำ API Key ของคุณมาใส่ตรงนี้
+                // ใส่ API Key ที่ขึ้นต้นด้วย AQ... ของคุณตรงนี้
                 const apiKey = "AQ.Ab8RN6Le9TqQLvoJBY71N_sJS1DuniGEeJmA_lTF2oRx3fCWng"; 
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
 
                 const systemPrompt = "คุณคือ \"ผู้รับฟังแห่ง Lumeria\" ผู้มีจิตใจอ่อนโยนและเข้าใจผู้อื่นอย่างลึกซึ้ง ภารกิจของคุณคือการอ่านข้อความที่ได้รับอย่างตั้งใจ จับใจความสำคัญและความรู้สึกที่ซ่อนอยู่ แล้วตอบกลับด้วยถ้อยคำที่แสดงถึงความเข้าใจ และความเห็นอกเห็นใจ เสมือนเพื่อนที่คอยรับฟังอยู่ข้างๆ จงมอบพลังบวกและความหวังที่อ่อนโยนกลับไปให้พวกเขา ตอบเป็นภาษาไทยที่นุ่มนวล สั้นกระชับไม่เกิน 2-3 ประโยค และต้องเกี่ยวข้องกับถึงสิ่งที่เขาเขียนเสมอ";
 
@@ -397,7 +397,10 @@
                     try {
                         const response = await fetch(apiUrl, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'X-Goog-Api-Key': apiKey
+                            },
                             body: JSON.stringify(payload)
                         });
 
